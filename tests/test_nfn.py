@@ -27,7 +27,7 @@ class Tiny(torch.nn.Module):
         self.inputs = inputs
         self.d = d
 
-    def forward(self, input_ids, attention_mask):
+    def forward(self, input_ids, attention_mask, use_cache=None):
         x = self.inputs if self.inputs is not None else torch.randn(*input_ids.shape, self.d)
         for layer in self.model.layers:
             x = layer(x)

@@ -88,7 +88,8 @@ def score_model(model, batches, mask_padding=True):
     """Run `batches` (tokenizer outputs) through `model` and return NFN scores.
 
     mask_padding=False reproduces the reference code, which averages over pad
-    positions as well as real tokens.
+    positions as well as real tokens (right-padded with EOS, as the reference's
+    tokenizer does; left-pad positions attend to nothing and skew the scores).
     """
     accs, hooks = {}, []
     current_mask = {}
@@ -97,14 +98,13 @@ def score_model(model, batches, mask_padding=True):
         acc = accs[name]
 
         def hook(module, args, output):
-            z = args[0].reshape(-1, acc.d_in).float()
-            mask = current_mask.get("flat")
-            if mask is not None:
-                z = z[mask]
-            z_hat = z / (z.norm(dim=1, keepdim=True) + 1e-8)
-            y = z_hat @ module.weight.float().t()
-            acc.norm_sum += y.norm(dim=1).sum().item()
-            acc.tokens += z.shape[0]
+            # ||W z_hat|| = ||W z|| / ||z||, and W z is the module's own output,
+            # so no extra matmul is needed.
+            y = output if module.bias is None else output - module.bias
+            gain = y.float().norm(dim=-1) / args[0].float().norm(dim=-1).clamp_min(1e-8)
+            mask = current_mask["mask"]
+            acc.norm_sum += (gain * mask).sum()
+            acc.tokens += mask.sum()
 
         return hook
 
@@ -125,17 +125,21 @@ def score_model(model, batches, mask_padding=True):
         raise ValueError("No scorable modules found; unsupported architecture?")
 
     device = next(model.parameters()).device
+    # Run only the transformer body: the LM head's vocab-sized logits are never used.
+    body = getattr(model, "base_model", model)
     try:
         for batch in batches:
             batch = {k: v.to(device) for k, v in batch.items()}
-            current_mask["flat"] = batch["attention_mask"].reshape(-1).bool() if mask_padding else None
-            model(**batch)
+            mask = batch["attention_mask"].float()
+            current_mask["mask"] = mask if mask_padding else torch.ones_like(mask)
+            body(**batch, use_cache=False)
     finally:
         for h in hooks:
             h.remove()
 
     result = NFNResult()
     for name, a in accs.items():
+        a.norm_sum, a.tokens = a.norm_sum.item(), int(a.tokens.item())
         nfn = a.norm_sum / a.tokens / a.random_gain
         # "actual"/"random" use the reference JSON's scale (W scaled to unit RMS,
         # both divided by sqrt(d_in)), on which random = sqrt(d_out / d_in).

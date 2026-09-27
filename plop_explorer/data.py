@@ -39,10 +39,18 @@ def load_prompts(task, n=100, seed=0):
     return random.Random(seed).sample(pool, min(n, len(pool)))
 
 
-def make_batches(prompts, tokenizer, batch_size=8, seq_len=256):
+def make_batches(prompts, tokenizer, batch_size=8, seq_len=256, padding_side=None):
+    """padding_side="right" with an EOS pad token mimics the reference setup."""
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     return [
-        tokenizer(prompts[i : i + batch_size], padding=True, truncation=True, max_length=seq_len, return_tensors="pt")
+        tokenizer(
+            prompts[i : i + batch_size],
+            padding=True,
+            truncation=True,
+            max_length=seq_len,
+            return_tensors="pt",
+            **({"padding_side": padding_side} if padding_side else {}),
+        )
         for i in range(0, len(prompts), batch_size)
     ]
