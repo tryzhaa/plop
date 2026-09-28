@@ -82,3 +82,15 @@ def test_grid_shape():
     grid = res.grid()
     assert list(grid) == ["Query", "Value"]
     assert all(len(v) == 3 for v in grid.values())
+
+
+def test_exact_baseline_matches_sampled_baseline():
+    # The reference samples a random unit vector u per token and averages ||W u||;
+    # our closed form ||W||_F / sqrt(d_in) is sqrt(E||W u||^2), equal up to Jensen's gap.
+    torch.manual_seed(0)
+    w = torch.randn(96, 64) * torch.linspace(0.1, 3, 64)  # anisotropic columns
+    u = torch.randn(200_000, 64)
+    u = u / u.norm(dim=1, keepdim=True)
+    sampled = (u @ w.t()).norm(dim=1).mean().item()
+    exact = (w.norm() / math.sqrt(64)).item()
+    assert math.isclose(sampled, exact, rel_tol=0.01)

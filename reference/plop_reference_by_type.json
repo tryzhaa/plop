@@ -1,5 +1,6 @@
 {
   "_source": "https://github.com/soufiane001/plop results/ (commit 80597d2): Llama-3.2-1B-Instruct, nbsamples=100, seqlen=256, batchsize=8, fp16, per-type mean NFN. Only 'math' matches the current reference code's output format; the other tasks came from an older version with a different scale and, where 'nfn' is missing, are recorded as actual/random of the per-type means.",
+  "_reproduction_note": "scripts/check_reference.py (reference-style: EOS right-padding, pads counted) matches the math ranking and top-3 (OutProj, Value, DownProj); Value/OutProj/UpProj/DownProj within ~1%, Query +3%, Key +5%, GateProj +7% (mean abs error 2.5%). Not explained by prompt sampling (seed sd ~0.01), per-batch vs pooled averaging, or pad token choice; left-padding is clearly wrong (OutProj 0.60). Remaining suspects: the authors' older transformers version and CUDA fp16 vs our MPS fp16.",
   "Llama-3.2-1B-Instruct": {
     "math": {
       "Query": 2.579,
