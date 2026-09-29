@@ -141,6 +141,9 @@ def score_model(model, batches, mask_padding=True):
     for name, a in accs.items():
         a.norm_sum, a.tokens = a.norm_sum.item(), int(a.tokens.item())
         nfn = a.norm_sum / a.tokens / a.random_gain
+        if not math.isfinite(nfn):
+            # Typically fp16 activation overflow (e.g. Gemma); rerun in float32 or bfloat16.
+            raise FloatingPointError(f"Non-finite NFN for {name}; try a wider dtype")
         # "actual"/"random" use the reference JSON's scale (W scaled to unit RMS,
         # both divided by sqrt(d_in)), on which random = sqrt(d_out / d_in).
         random = math.sqrt(a.d_out / a.d_in)
