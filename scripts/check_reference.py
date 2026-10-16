@@ -19,6 +19,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from plop_explorer.data import load_prompts, make_batches  # noqa: E402
 from plop_explorer.nfn import MODULE_TYPES, score_model  # noqa: E402
+from plop_explorer.runlog import save_result  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = json.loads((ROOT / "reference/plop_reference_by_type.json").read_text())
@@ -31,9 +32,11 @@ def main():
     p.add_argument("--task", default="math", choices=["math", "code", "history", "logic"])
     p.add_argument("--nbsamples", type=int, default=100)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--device", default="mps" if torch.backends.mps.is_available() else "cpu")
     args = p.parse_args()
 
-    device, dtype = ("mps", torch.float16) if torch.backends.mps.is_available() else ("cpu", torch.float32)
+    device = args.device
+    dtype = torch.float16 if device == "mps" else torch.float32
     tok = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype).to(device).eval()
     prompts = load_prompts(args.task, args.nbsamples, args.seed)
@@ -58,6 +61,24 @@ def main():
     print(f"\nPLoP top-3  reference: {ref_top3}")
     print(f"            ours:ref:  {runs[False].recommend()}")
     print(f"            ours:mask: {runs[True].recommend()}")
+
+    if args.task == "math":
+        # Per-layer check against the paper's Fig 4 NFN-map (same model, math).
+        fig4 = json.loads((ROOT / "reference/plop_fig4_llama1b_math.json").read_text())["grid"]
+        print(f"\nPer-layer vs Fig 4 (mean |relative error| over 16 layers):\n{'type':<10}{'ours:ref':>10}{'ours:mask':>11}")
+        errs = {False: [], True: []}
+        for t in MODULE_TYPES:
+            row = []
+            for masked in (False, True):
+                e = [abs(a - w) / w for a, w in zip(runs[masked].grid()[t], fig4[t])]
+                errs[masked] += e
+                row.append(sum(e) / len(e))
+            print(f"{t:<10}{row[0]:>10.1%}{row[1]:>11.1%}")
+        print(f"{'all':<10}{sum(errs[False]) / len(errs[False]):>10.1%}{sum(errs[True]) / len(errs[True]):>11.1%}")
+        save_result(ROOT / "reference" / "ours" / "fig4_layer_check.json",
+                    {"mean_rel_err": {"reference": sum(errs[False]) / len(errs[False]), "masked": sum(errs[True]) / len(errs[True])},
+                     "grid_reference": runs[False].grid()},
+                    model=args.model, task=args.task, nbsamples=args.nbsamples, seed=args.seed, device=device, dtype=str(dtype))
 
     out = ROOT / "results" / f"{args.model.split('/')[-1]}_{args.task}.json"
     out.parent.mkdir(exist_ok=True)

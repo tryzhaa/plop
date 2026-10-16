@@ -1,0 +1,58 @@
+{
+ "meta": {
+  "git_hash": "96b1ae2d5bcb849e19bd956672114e76202cdce4",
+  "torch": "2.14.1",
+  "transformers": "5.20.1",
+  "timestamp": "2026-10-16T15:41:18+00:00",
+  "model": "unsloth/gemma-3-1b-pt",
+  "task": "code",
+  "nbsamples": 100,
+  "seed": 0,
+  "device": "cpu",
+  "dtype": "torch.float32"
+ },
+ "result": {
+  "reference": {
+   "by_type": {
+    "Query": 1.4815383672603761,
+    "Key": 1.3734802396968067,
+    "Value": 0.7256886392413893,
+    "OutProj": 1.7349589345140188,
+    "GateProj": 1.419532997645272,
+    "UpProj": 0.9169970726479394,
+    "DownProj": 1.415427327837527
+   },
+   "plop": [
+    "Value",
+    "UpProj",
+    "Key"
+   ],
+   "plop_inv": [
+    "GateProj",
+    "Query",
+    "OutProj"
+   ]
+  },
+  "masked": {
+   "by_type": {
+    "Query": 1.467200808320962,
+    "Key": 1.2872760768383427,
+    "Value": 0.7113043693036951,
+    "OutProj": 1.6732308867791932,
+    "GateProj": 1.4458396194374719,
+    "UpProj": 0.9243563040500992,
+    "DownProj": 1.4238719372812616
+   },
+   "plop": [
+    "Value",
+    "UpProj",
+    "Key"
+   ],
+   "plop_inv": [
+    "GateProj",
+    "Query",
+    "OutProj"
+   ]
+  }
+ }
+}

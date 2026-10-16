@@ -1,0 +1,58 @@
+{
+ "meta": {
+  "git_hash": "96b1ae2d5bcb849e19bd956672114e76202cdce4",
+  "torch": "2.14.1",
+  "transformers": "5.20.1",
+  "timestamp": "2026-10-16T15:55:07+00:00",
+  "model": "unsloth/Llama-3.2-1B-Instruct",
+  "task": "history",
+  "nbsamples": 100,
+  "seed": 0,
+  "device": "cpu",
+  "dtype": "torch.float32"
+ },
+ "result": {
+  "reference": {
+   "by_type": {
+    "Query": 2.8902587937619955,
+    "Key": 3.1048552204805717,
+    "Value": 0.9699625708749111,
+    "OutProj": 0.9542193890364848,
+    "GateProj": 1.6532115135871388,
+    "UpProj": 1.1503313749402149,
+    "DownProj": 1.0474032914477982
+   },
+   "plop": [
+    "OutProj",
+    "Value",
+    "DownProj"
+   ],
+   "plop_inv": [
+    "GateProj",
+    "Query",
+    "Key"
+   ]
+  },
+  "masked": {
+   "by_type": {
+    "Query": 2.8967050323284007,
+    "Key": 3.122391392753989,
+    "Value": 0.9703422868372538,
+    "OutProj": 0.9550185308990151,
+    "GateProj": 1.6659113876303064,
+    "UpProj": 1.1529770659963023,
+    "DownProj": 1.047791036488324
+   },
+   "plop": [
+    "OutProj",
+    "Value",
+    "DownProj"
+   ],
+   "plop_inv": [
+    "GateProj",
+    "Query",
+    "Key"
+   ]
+  }
+ }
+}

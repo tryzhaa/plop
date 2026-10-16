@@ -1,0 +1,58 @@
+{
+ "meta": {
+  "git_hash": "96b1ae2d5bcb849e19bd956672114e76202cdce4",
+  "torch": "2.14.1",
+  "transformers": "5.20.1",
+  "timestamp": "2026-10-16T16:07:42+00:00",
+  "model": "Qwen/Qwen3-0.6B",
+  "task": "code",
+  "nbsamples": 100,
+  "seed": 0,
+  "device": "cpu",
+  "dtype": "torch.float32"
+ },
+ "result": {
+  "reference": {
+   "by_type": {
+    "Query": 1.192975877382588,
+    "Key": 1.2075575729593335,
+    "Value": 0.7005491145477072,
+    "OutProj": 0.9613601675106235,
+    "GateProj": 1.4500302158069205,
+    "UpProj": 0.892980072713848,
+    "DownProj": 0.9333584129492253
+   },
+   "plop": [
+    "Value",
+    "UpProj",
+    "DownProj"
+   ],
+   "plop_inv": [
+    "Query",
+    "Key",
+    "GateProj"
+   ]
+  },
+  "masked": {
+   "by_type": {
+    "Query": 1.2271632655012095,
+    "Key": 1.2525896952024014,
+    "Value": 0.7039945564338957,
+    "OutProj": 0.9443964120943297,
+    "GateProj": 1.4834840149000175,
+    "UpProj": 0.8943062815101206,
+    "DownProj": 0.9391603033968426
+   },
+   "plop": [
+    "Value",
+    "UpProj",
+    "DownProj"
+   ],
+   "plop_inv": [
+    "Query",
+    "Key",
+    "GateProj"
+   ]
+  }
+ }
+}

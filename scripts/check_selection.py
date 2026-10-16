@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from plop_explorer.data import TASKS, load_prompts, make_batches  # noqa: E402
 from plop_explorer.nfn import score_model  # noqa: E402
+from plop_explorer.runlog import save_result  # noqa: E402
 
 # Lowest-3 (PLoP) and highest-3 (PLoP^-1) as reported; None = not reported.
 TARGETS = {
@@ -82,6 +83,10 @@ def main():
             out = ROOT / "results" / f"{name}_{task}.json"
             out.parent.mkdir(exist_ok=True)
             out.write_text(json.dumps({"padded": ref.modules, "masked": masked.modules}, indent=1))
+            summary = {mode: {"by_type": r.by_type(), "plop": r.recommend(3), "plop_inv": sorted(r.by_type(), key=r.by_type().get)[-3:]}
+                       for mode, r in (("reference", ref), ("masked", masked))}
+            save_result(ROOT / "reference" / "ours" / f"{name}_{task}.json", summary, model=model_id, task=task,
+                        nbsamples=args.nbsamples, seed=args.seed, device=device, dtype=str(model_dtype))
             rows.append((name, task, scores, set(ref.recommend(3)), set(masked.recommend(3)), model_id))
             print(f"{name}/{task}: {time.time() - t0:.0f}s", flush=True)
         del model

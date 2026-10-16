@@ -17,7 +17,7 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 |---|---|---|
 | G1 parameter counter | **Passed** | `plop_explorer/lora_params.py`; `tests/test_lora_params.py` reproduces all 16 #Params values; architecture sizes checked against each model's real `config.json` |
 | G2 scoring matches the authors | **Passed with a documented gap** | Recipe read from the authors' code (Section 3.2); Llama-1B math ranking and top-3 match; mean error 2.5% (Section 3.3 A) |
-| G3 selection sets | **Passed: 4 of 5 models** (Gemma pending) | `scripts/check_selection.py` (Section 3.3 B) |
+| G3 selection sets | **Passed: 5 of 5 models** on math (Gemma = `-it`) | `scripts/check_selection.py` (Section 3.3 B); asserted by `tests/test_verified.py` against `reference/ours/` |
 | G4 E1 linear network | Not started | |
 | G5 dashboard | Not started; unblocked by G2 and G3 | |
 | G6-G9 | Not started | |
@@ -154,7 +154,7 @@ The variant grid originally planned here is unnecessary: the authors' scoring co
 | Prompt text | Question only: no answer, no chat template. GSM8K samples 100 from the first 200 train questions; HumanEval gets a "# Write a Python function" prefix; MMLU gets the question plus lettered choices | Same, but seeded (theirs is unseeded) |
 | Batch 200 vs 8 | The code uses batches of 8 and 100 samples | We use the code's settings |
 
-Fig 4's 112 per-layer values are in `reference/plop_fig4_llama1b_math.json` (extracted from the PDF text; rows Key, OutProj, Query, Value, DownProj, GateProj, UpProj, 16 layers). Their layer averages equal the Section 5 table (checked: 2.62, 0.90, 2.58, 0.97, 1.05, 1.40, 1.11), so `check_reference.py` can also compare per layer.
+Fig 4's 112 per-layer values are in `reference/plop_fig4_llama1b_math.json` (extracted from the PDF text; rows Key, OutProj, Query, Value, DownProj, GateProj, UpProj, 16 layers). Their layer averages equal the Section 5 table (checked: 2.62, 0.90, 2.58, 0.97, 1.05, 1.40, 1.11), so `check_reference.py` can also compare per layer. **Result (2026-10-16):** our reference-setup grid is off by 3.1% mean |relative error| per cell (masked 7.4%); by type Query 3.2%, Key 5.3%, Gate 7.1%, the rest 1.5-1.8%, the same pattern as the type-level gap.
 
 ### 3.3 Targets
 
@@ -178,7 +178,7 @@ What the remaining gap is not:
 - Pad token choice (`<|eot_id|>` vs `<|end_of_text|>`): mean error 2.5% vs 2.3%.
 - Left padding is clearly wrong (OutProj drops to 0.60, mean error 9-10%), which confirms right padding.
 
-Remaining suspects: the authors' older `transformers` version and CUDA fp16 vs our MPS fp16. The gap is largest exactly where counting padding matters most (Key, Gate, Query), so pad-position activations are the likeliest place the two environments differ. Decision: stop chasing it, record it in the README, and keep the reference-setup toggle.
+Precision is ruled out (2026-10-16): CPU fp32 gives the same per-type scores as MPS fp16 to 0.01 (Query 2.66, Key 2.76, Gate 1.50). Remaining suspect: the authors' older `transformers` version. The gap is largest exactly where counting padding matters most (Key, Gate, Query), so pad-position activations are the likeliest place the two environments differ. Decision: stop chasing it, record it in the README, and keep the reference-setup toggle.
 
 **B. Selection sets reported across the paper (hard pass/fail):**
 
@@ -202,7 +202,8 @@ Unknown: which dataset the authors scored for the ANLI and Qwen3 selection sets.
 | Qwen2.5-0.5B | Out, Up, Value | Gate, Key, Query | All 4 tasks |
 | Qwen3-0.6B | Down, Up, Value | Gate, Key, Query ✓ | All 4 tasks, both sets |
 | Qwen3-1.7B | Down, Out, Value (math) | Gate, Key, Query ✓ | Math. Code (reference setup), history and logic pick Up instead of Out |
-| Gemma3-1B | pending | pending | fp16 overflows to NaN; rerunning in fp32 on CPU, both `-pt` and `-it` |
+| Gemma3-1B-it | Key, Up, Value | Down, Gate, Out ✓ | Math, history, logic, both sets (fp32 CPU). Code (reference setup) picks Query for Key: 1.28 vs 1.30, a near-tie; masked setup matches |
+| Gemma3-1B-pt | Key, Up, Value (masked); Down for Key on math and logic (reference) | Never matches (Out plus Key/Query/Gate) | Not the paper's model; consistent with Fig 5b's "Gemma3-1B-Instruct" label |
 
 Notes:
 - Qwen3-1.7B's swap is a near-tie: Out, Up and Down all score 0.95-0.99. Its paper picks come from the math experiments, and math matches.
@@ -369,7 +370,7 @@ Compare pairs: Gemma3-1B `-pt` vs `-it`, Qwen3-0.6B-Base vs Qwen3-0.6B, Llama-3.
 10. Unknowns: batch sizes, learning rates for ANLI, ANLI round mix, base vs instruct for the Qwen3 SFT runs (NFN models are labelled Instruct), which dataset produced the ANLI selection sets.
 11. Qwen2.5-0.5B ANLI: the paper's PLoP rank 17 gives 3.50M parameters; rank 16 (3.29M) is closer to the 3.32M budget.
 12. Our Llama-1B math scores are 3-7% higher than the paper's on Query, Key and Gate, with the same ranking and pick. Not explained by sampling, averaging or pad token (Section 3.3 A).
-13. Gemma3-1B overflows to NaN in fp16 with current `transformers`, although the authors report fp16.
+13. Gemma3-1B overflows to NaN in fp16 with current `transformers`, although the authors report fp16. In fp32 the paper's Gemma sets reproduce with the `-it` model; `-pt` does not match.
 14. The authors' prompt sampling is unseeded, so their exact prompts cannot be reproduced; ours are seeded.
 15. Picks barely change across tasks within a model (X4 tests what this means for the "task-aware" framing).
 16. Sec 2.1 says Appendix C has SignSGD results for the linear network; it does not.
