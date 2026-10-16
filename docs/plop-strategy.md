@@ -1,5 +1,7 @@
 # PLoP Explorer: Implementation Strategy
 
+> **Superseded** by `plop-implementation-plan.md` (status, experiments, product decisions) and `plop-build-spec.md` (build steps). Kept for history; its framework, hosting and open questions are stale.
+
 Paper: Hayou, Ghosh, Yu, "PLoP: Precise LoRA Placement for Efficient Finetuning of Large Models", arXiv:2506.20629v1 (June 2025).
 
 ---
