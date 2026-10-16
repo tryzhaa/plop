@@ -44,10 +44,13 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 | Overall as a portfolio piece | 4/10 | Strong foundation, nothing visible yet |
 
 ### Next steps, in order
-1. Finish Gemma in G3 (running on CPU in fp32) and commit.
-2. X4: does NFN depend on the task or mostly on the model? (Section 6.2; about an hour on CPU.) Do this before the dashboard because it may change what Page 1 emphasizes.
-3. README, license and GitHub topics (Section 13).
-4. G5: API, cache and Page 1, then deploy.
+The full execution plan, with deliverables and acceptance checks per workstream, is Section 14. Summary:
+1. WS0: commit, license, CI, `.gitignore` the PDF (Section 14.1).
+2. WS1: finish Gemma and the per-layer check, commit small verified results (Section 14.2).
+3. WS2: README v0 with figures (Section 14.3).
+4. WS3: X4, X5, X6 on CPU (Section 14.4). X4 runs before the dashboard because it may change what Page 1 emphasizes.
+5. WS4: E6 pilot, E6, X1 on Kaggle (Section 14.5).
+6. WS5: dashboard and deploy (Section 14.6), WS6: E1 notebook (Section 14.7), WS7: write-up and interview prep (Section 14.8).
 
 ---
 
@@ -151,7 +154,7 @@ The variant grid originally planned here is unnecessary: the authors' scoring co
 | Prompt text | Question only: no answer, no chat template. GSM8K samples 100 from the first 200 train questions; HumanEval gets a "# Write a Python function" prefix; MMLU gets the question plus lettered choices | Same, but seeded (theirs is unseeded) |
 | Batch 200 vs 8 | The code uses batches of 8 and 100 samples | We use the code's settings |
 
-Still open: Fig 4's 112 per-layer values are not in our reference file. Copy them out of the figure (or the authors' `results/` folder) if a per-layer comparison is wanted. Useful fact: the Section 5 table is the layer-average of Fig 4's rows, so the two are consistent.
+Fig 4's 112 per-layer values are in `reference/plop_fig4_llama1b_math.json` (extracted from the PDF text; rows Key, OutProj, Query, Value, DownProj, GateProj, UpProj, 16 layers). Their layer averages equal the Section 5 table (checked: 2.62, 0.90, 2.58, 0.97, 1.05, 1.40, 1.11), so `check_reference.py` can also compare per layer.
 
 ### 3.3 Targets
 
@@ -214,7 +217,7 @@ Notes:
 ### 3.4 Runs
 - E2: Llama-3.2-1B-Instruct x GSM8K, produce map + table.
 - E3: Llama-3.2-1B, Gemma3-1B, Llama-3.2-3B, Qwen3-1.7B x {math, code, history, logic}.
-- E4: Qwen2.5-1.5B vs Qwen2.5-Math-1.5B (GSM8K) and vs Qwen2.5-Coder-1.5B (HumanEval).
+- E4: Qwen2.5-1.5B-Instruct vs Qwen2.5-Math-1.5B-Instruct (GSM8K) and vs Qwen2.5-Coder-1.5B-Instruct (HumanEval). The paper's text says "instruction-tuned and specialized" and its appendix maps are labelled `-Instruct`.
 - E5: the additional maps in Appendix C.7.
 - Paper settings: Fig 4 used a single batch of 200, max length 256; the Section 5 command uses `--batchsize 8 --nbsamples 100 --seqlen 256`. These are inconsistent, so test both and check that the result is stable.
 - Note from the notes in our context file: the authors' Appendix maps for some models are reported to be on an older, incompatible scale, so treat E5 as qualitative unless E2's recipe recovery shows otherwise.
@@ -232,14 +235,14 @@ Notes:
 
 **Unknowns to choose and record:** learning rate, init scale (the text says weights near 1/sqrt(n), i.e. muP-style), whether the noise value 0.025 is a variance or a standard deviation, and w's scale (main text writes d^{-1} N(0,1), the appendix writes d^{-1/2} N(0,1)).
 
-**Outputs:** a Fig 3 look-alike (norm curves + loss curve), and the same for SignSGD.
+**Outputs:** a Fig 3 look-alike (norm curves + loss curve), and the same for SignSGD. The paper says Appendix C has SignSGD results, but it does not (C.1 describes Adam only), so the SignSGD run is ours and has no target.
 
 **Pass criteria (qualitative, from the paper):** real feature norms rise and plateau within about the first 200 steps while loss falls fastest; the baseline stays roughly flat; different layers grow by different amounts.
 
 **Theorem 1 check (single hidden layer trained, others frozen, one data point, SignSGD with learning rate eta/n):**
 - Compare the measured n^{-1} ||W_t z||^2 with the formula for Gamma_t.
 - Repeat for n in {100, 400, 1600, 6400} and plot the maximum error against n on log-log axes; the theorem predicts the error shrinks like n^{-delta}.
-- **Discrepancy to test:** the theorem states Gamma_t = Gamma_0 + beta^2 (1 + t(t-1)), but the proof defines the recursion Gamma_{t+1} = Gamma_t + beta^2 (1 + 2t), which sums to Gamma_0 + beta^2 t^2. These agree at t = 1 and differ afterwards. One is probably a typo. Simulate and see which fits; report the finding without assuming.
+- **Discrepancy to test:** the theorem states Gamma_t = Gamma_0 + beta^2 (1 + t(t-1)), but the proof defines the recursion Gamma_{t+1} = Gamma_t + beta^2 (1 + 2t), which sums to Gamma_0 + beta^2 t^2. These agree at t = 1 and differ at t = 0 (theorem: Gamma_0 + beta^2, but Gamma_0 is defined as the value at t = 0) and at t >= 2. One is probably a typo. Simulate and see which fits; report the finding without assuming.
 
 ---
 
@@ -314,6 +317,8 @@ Feasibility is unknown: 35 runs is a lot. Options if it is too heavy: fewer step
 Optional, lower priority: repeat the paper's unsuccessful layer-level selection to see whether we can explain its inconsistency.
 
 ### 6.2 X4: does NFN measure the task or the model? (new, CPU)
+**Context from the paper:** its Fig 5 `random` entry is the dashed baseline at 1.0, not a random-input dataset, so the controls below are new. The paper itself says all tasks share a task-independent "base" alignment level, so X4 measures how large that level is rather than refuting a claim.
+
 **Why:** in the G3 results, each model's pick is nearly identical on math, code, history and logic. Llama picks Down, Out, Value on all four; so does Qwen3-0.6B (Down, Up, Value). The order of the seven types also barely moves (Qwen3 Value always lowest, Gate or Key always highest). If NFN mostly reflects the model, PLoP's placement is closer to a per-model constant than a task-aware choice. That would challenge the paper's framing.
 
 **Runs:**
@@ -338,7 +343,7 @@ Report whichever it is. **Effect on the product:** Page 1 should show how stable
 Scores moved about 0.01 across 5 seeds at 100 prompts. Score with 5, 10, 25, 50 and 100 prompts over 5 seeds each, and plot the spread and how often the pick changes. If about 10 prompts is stable, the "paste your own prompts" feature can be fast and credible, and the tool can say how many prompts it needs.
 
 ### 6.4 X6: base vs instruction-tuned (new, CPU)
-Compare pairs: Gemma3-1B `-pt` vs `-it`, Qwen3-0.6B-Base vs Qwen3-0.6B, Llama-3.2-1B vs Llama-3.2-1B-Instruct. Does post-training change the NFN map, and does it change the pick? This fits naturally on Page 2 (Compare). It also resolves the "base or instruct" unknown for the paper's Qwen3 and Gemma results, if one variant matches and the other does not.
+Compare pairs: Gemma3-1B `-pt` vs `-it`, Qwen3-0.6B-Base vs Qwen3-0.6B, Llama-3.2-1B vs Llama-3.2-1B-Instruct. Does post-training change the NFN map, and does it change the pick? This fits naturally on Page 2 (Compare). The paper labels its NFN models Instruct (Gemma3-1B-Instruct, Qwen3-1.7B-Instruct), so the "base or instruct" unknown applies only to the SFT training runs; X6 can still show whether the pick would differ.
 
 ---
 
@@ -361,12 +366,16 @@ Compare pairs: Gemma3-1B `-pt` vs `-it`, Qwen3-0.6B-Base vs Qwen3-0.6B, Llama-3.
 7. Sec 3 text says Llama-1B's lowest scores are Value, Gate, Down, Up "hovering around 1", but the table gives Gate 1.40.
 8. The paper's Sec 4.1 says PLoP and MLP match on Llama because MLP modules have low NFN; Gate at 1.40 makes this only partly true. Testable via an "MLP without gate" run.
 9. Learning rate chosen on the test set in the SFT tables.
-10. Unknowns: batch sizes, learning rates for ANLI, ANLI round mix, base vs instruct for Qwen3, which dataset produced the ANLI selection sets.
+10. Unknowns: batch sizes, learning rates for ANLI, ANLI round mix, base vs instruct for the Qwen3 SFT runs (NFN models are labelled Instruct), which dataset produced the ANLI selection sets.
 11. Qwen2.5-0.5B ANLI: the paper's PLoP rank 17 gives 3.50M parameters; rank 16 (3.29M) is closer to the 3.32M budget.
 12. Our Llama-1B math scores are 3-7% higher than the paper's on Query, Key and Gate, with the same ranking and pick. Not explained by sampling, averaging or pad token (Section 3.3 A).
 13. Gemma3-1B overflows to NaN in fp16 with current `transformers`, although the authors report fp16.
 14. The authors' prompt sampling is unseeded, so their exact prompts cannot be reproduced; ours are seeded.
 15. Picks barely change across tasks within a model (X4 tests what this means for the "task-aware" framing).
+16. Sec 2.1 says Appendix C has SignSGD results for the linear network; it does not.
+17. Theorem 1's statement gives probability 1 - 2n^(-1+2δ), its proof ends at 1 - 2n^(-1+δ); Theorem 2's bound on T differs between statement and proof.
+18. Theorem 1's Gamma_t is also inconsistent at t = 0 (see item 2).
+19. Sec 3 prints the closed-form NFN approximation with ||W||_F ||z_in|| in the denominator; the exact expectation is ||W z|| sqrt(d_in) / (||W||_F ||z||), i.e. the paper's form is off by a factor sqrt(d_in) (our `nfn.py` uses the exact one). Confirmed on the rendered page 8.
 
 ---
 
@@ -462,3 +471,106 @@ Do not build UI on unverified scores (G2 and G3 before G5).
 | E1 as a notebook with the Fig 3 look-alike | A visual that explains NFN's motivation | Part of G4 |
 | Write-up / blog post | What actually gets shared | After G7 |
 | Update `plop-strategy.md` or mark it superseded | Its framework (Streamlit/Gradio), hosting and open questions are stale | Minutes |
+
+---
+
+## 14. Execution plan: from careful reproduction to an ML-engineer-worthy project
+
+Goal: a stranger (recruiter or engineer) opens the repo and, in 90 seconds, sees (a) a working, verified method, (b) a figure and a results table, (c) one result that is ours, with statistics, and (d) honest limits. Current standing is about 5/10 (Section 0); the workstreams below are ordered by score gained per hour. Expected ratings are estimates, not measurements.
+
+### 14.0 Definition of done (the bar)
+
+| # | Requirement | Evidence in repo |
+|---|---|---|
+| 1 | One command reproduces the headline table | `make verify` (or documented 3 commands) prints Llama-1B math table, pass/fail |
+| 2 | Tests and CI green | `pytest` passes in GitHub Actions on every push |
+| 3 | Numbers are checkable | Small result JSONs committed under `reference/ours/`, each with git hash, library versions, seed, dtype, device |
+| 4 | A visible figure | README shows heatmap + bar chart vs the paper |
+| 5 | One original finding with statistics | X4 and X1 written up with correlation, intervals, controls |
+| 6 | Training evidence | E6: 3 placements x 3 seeds, mean ± SE, matched parameters |
+| 7 | Honest limits | README "What this does not show" section; discrepancy log linked |
+| 8 | A live demo | Hugging Face Space link in the README |
+| 9 | A write-up | One page: question, method, results, caveats |
+
+### 14.1 WS0: hygiene and commit (about 1 hour, do first)
+1. Commit the currently uncommitted work: `CLAUDE.md`, `docs/plop-build-spec.md`, `docs/plop-interview-guide.md`, `reference/plop_fig4_llama1b_math.json`, the plan edits. Separate commits for docs and data.
+2. Add `docs/pppp.pdf` to `.gitignore` and link the arXiv abstract in the README instead (avoids redistributing the PDF).
+3. `LICENSE` (MIT). GitHub description and topics: `lora`, `peft`, `llm`, `reproducibility`, `pytorch`, `interpretability`.
+4. `.github/workflows/ci.yml`: Python 3.11, `pip install torch --index-url https://download.pytorch.org/whl/cpu`, `pip install -r requirements.txt`, `pytest -q`. Tests are CPU-only and finish in seconds; confirm no test downloads models or datasets, and mark any that do with `@pytest.mark.network` and deselect in CI.
+5. `plop_explorer/runlog.py` (about 30 lines): `save_result(path, payload, **meta)` writes JSON with `git_hash`, `torch`/`transformers` versions, `device`, `dtype`, `seed`, ISO timestamp. All later scripts use it. Unit test: file contains the keys.
+6. Replace `plop-strategy.md` header with "Superseded by plop-implementation-plan.md".
+- Accept: clean `git status`, CI badge green, `runlog` test passes.
+
+### 14.2 WS1: close verification (about half a day; CPU)
+Follows `plop-build-spec.md` Steps 1-2.
+1. Gemma3-1B `-it` and `-pt`: `python scripts/check_selection.py --models unsloth/gemma-3-1b-it unsloth/gemma-3-1b-pt --device cpu`. Record which matches K-V-U / O-G-D. Update Section 3.3 B and gate G3 to 5 of 5 or "4 of 5 with reason".
+2. Per-layer check: extend `check_reference.py` to compare `grid()` with `reference/plop_fig4_llama1b_math.json`; print mean absolute error per type and overall.
+3. Commit compact summaries (per-type scores, top-3, per-layer error) to `reference/ours/{model}_{task}.json`. Full per-module dumps stay in gitignored `results/`.
+4. Add a unit test that loads the committed summaries and asserts the documented pass criteria (top-3 sets, ranking). This turns the claims in the README into tests.
+- Accept: table in plan Section 3.3 B complete; per-layer error number recorded; tests green.
+
+### 14.3 WS2: README v0 and figures (about half a day)
+1. `scripts/make_figures.py` (matplotlib; add to `requirements.txt`): reads `reference/ours/*.json` and the reference JSONs, writes `docs/img/`:
+   - `heatmap_llama1b_math.png`: 7 x 16 grid, one fixed color scale, 1.0 marked, ours vs paper side by side.
+   - `bars_vs_paper.png`: per-type scores, ours (reference setup), ours (masked), paper.
+   - `picks_table.png` or a Markdown table: 5 models x our pick vs paper pick.
+2. README sections, in order: one-sentence pitch; headline figure; "What is PLoP" (3 sentences + the formula); "What I reproduced" (table with real numbers: ~2.5% mean error, selection sets, 16/16 parameter counts); "What I found that the paper gets wrong" (5 bullets from the discrepancy log); "What this does not show" (no training result yet until WS4; CPU-only; fp16 vs bf16); "Run it" (3 commands); links to plan, spec, interview guide.
+3. Do not state any number that is not in a committed result file.
+- Accept: a reader who knows nothing can say what the project does and what is verified; every number in the README traces to a file.
+
+### 14.4 WS3: X4, X5, X6 on CPU (about 1 day total; this is the first original result)
+Details in Sections 6.2-6.4 and spec Steps 3-4. Implementation additions:
+1. `data.py`: `load_prompts` gains `random_tokens`, `shuffled_words`, `prose` (control sets). `prose`: use `wikitext` (`Salesforce/wikitext`, `wikitext-103-raw-v1` train, non-empty lines of 20-80 words); `random_tokens`: `torch.randint` over vocabulary with the math prompts' token-length distribution; `shuffled_words`: `random.Random(seed).shuffle` on each math prompt's words.
+2. `scripts/x4_task_vs_model.py` writes `reference/ours/x4.json` (7 scores per model x set). Analysis in `plop_explorer/stats.py`: `spearman(a, b)` via `scipy.stats.spearmanr` (add `scipy`), `pick_change_rate(scores_by_set)`.
+3. Required outputs: (a) heatmap of Spearman rho between all pairs of sets for each model; (b) bar chart of mean distance from the real tasks for each control; (c) one sentence of conclusion using the decision table in Section 6.2.
+4. X5 and X6 as in spec Step 4. X5's figure: pick-change rate vs number of prompts with 5 seeds.
+- Accept: figures committed; Section 6.2 gets a "Result" subsection; README gets one finding paragraph whether the answer is "mostly the model" or not. Page 1's "pick stability" badge is defined from this result.
+
+### 14.5 WS4: training evidence on Kaggle (1-2 weeks elapsed, GPU quota bound)
+1. **Pilot first** (one placement, one seed, 300 steps): measure steps/s and peak memory; set steps and seeds from the measurement. Do not promise numbers before it.
+2. `experiments/e6_anli_train.py`, arguments: `--model --placement {plop,plop_inv,mlp,attn,custom:Query,Key,...} --rank --seed --steps --lr --batch --out`. Details:
+   - Data: `facebook/anli`, train on `train_r1+r2+r3`, evaluate on `dev` of the three rounds combined for the curve and on `test_r1+r2+r3` once at the end (verify split names and sizes on load and log them).
+   - Model: `AutoModelForSequenceClassification` (3 labels), LoRA via `peft` with `task_type="SEQ_CLS"`; the classification head is randomly initialised so it must be trained: `modules_to_save=["score"]`. Record this choice (paper silent).
+   - `target_modules` from placement types via the leaf names in `nfn.MODULE_TYPES`; `r` from `lora_params.match_rank` at the MLP r=8 budget; `lora_alpha = 2r`, `lora_dropout = 0.1`; AdamW, linear schedule, no warmup, max length 256; fp16 autocast with GradScaler (T4/P100), disclosed deviation from bf16.
+   - Logging: `runlog.save_result` per run plus a CSV of (step, train loss, dev accuracy) every 250 steps. Assert the trainable parameter count equals `lora_params.count(...)` plus the head, as a correctness test.
+   - Seeds control data order, LoRA init and dropout.
+3. Runs: Qwen2.5-0.5B x {plop, mlp, attn, plop_inv} x 3 seeds; Llama-3.2-1B only if quota allows. The PLoP placement is taken from our own X-scores and cross-checked against the paper's V,O,Up / V,O,Down.
+4. `plop_explorer/stats.py`: `mean_se`, `paired_diff(a, b)` with a bootstrap 95% interval over seeds, `binomial_se(p, n)`.
+5. **X1 (the original contribution)**: all 35 three-type combinations on Qwen2.5-0.5B ANLI, 1 seed, reduced steps (set from the pilot), rank via `match_rank`; then the 3 most interesting (PLoP, best, worst) re-run with 3 seeds. Figure: scatter of dev accuracy vs mean NFN of the three types, Spearman rho with a permutation p-value, PLoP/MLP/Attn highlighted. If the pilot says 35 is too slow, run a fixed random 12 and say so.
+6. Page 3 and README use only committed numbers.
+- Accept: results table with mean ± SE and paired differences; directional criteria from Section 5.1 reported as met or not met; X1 scatter with rho. A null or negative result is acceptable and published with the config.
+
+### 14.6 WS5: dashboard and deploy (about 3-5 days)
+Follows spec Step 6. Order of work:
+1. `app/core.py`: pure functions `load_cached(model, task, n, seed, pad)`, `score_job(...)`; unit tests with the `Tiny` model from `tests/test_nfn.py` (no network).
+2. `app/main.py` (FastAPI): endpoints in Section 12; jobs on a single worker thread; fp32 retry on `FloatingPointError`; request validation (model id format, n between 5 and 200, k between 1 and 7); error messages naming the expected leaf names for unsupported architectures.
+3. `app/static/` (HTML + vanilla JS + Plotly.js from a pinned CDN version): Page 1 first, then Page 2. Heatmap color scale fixed, 1.0 marked, colorblind-safe diverging palette; mobile width works.
+4. Precompute results for the verified model/task pairs offline and ship them in the image; live scoring only for custom input, capped at 1.7B parameters on the free CPU Space.
+5. `Dockerfile` (python:3.11-slim, CPU torch), Hugging Face Space (Docker), README badge and link; add a 30-60 s GIF.
+6. Smoke test in CI: start the app with the `Tiny` model fixture and hit `/api/nfn`.
+- Accept: public link works cold; precomputed pairs respond instantly; a bad model id gives a readable error, not a stack trace.
+
+### 14.7 WS6: E1 linear-network notebook (about 1 day; can run any time)
+Spec Step 7. `experiments/e1_linear_growth.py` plus `notebooks/e1_feature_norm_growth.ipynb` that only plots saved JSON. Figures: Fig 3 look-alike (3 layers + dashed baselines + loss), Theorem 1 error vs width on log-log axes, both candidate formulas overlaid. Seeds: 5, mean ± band. Result goes to the discrepancy log item 2 either way.
+- Accept: figure committed; the log states which formula fits and at which t the two differ.
+
+### 14.8 WS7: write-up and interview readiness (about 1 day, last)
+1. One-page write-up (`docs/writeup.md`): question, method in 5 sentences, three results (verification, X4, E6/X1), what failed or did not reproduce, limits. Numbers pulled from committed JSON.
+2. Review `docs/plop-interview-guide.md` against final results: replace every "planned" with the actual number or "not done". Keep its "three honest sentences".
+3. Resume bullets from Section 8 of `plop-strategy.md`, filled with real numbers only.
+- Accept: no claim in any document without a file that backs it.
+
+### 14.9 Order, dependencies and expected effect
+
+| Order | Workstream | Depends on | Effort | Rating after (est.) |
+|---|---|---|---|---|
+| 1 | WS0 hygiene | none | 1 h | 5 to 5.5 |
+| 2 | WS1 verification | WS0 | 0.5 d | 5.5 to 6 |
+| 3 | WS2 README + figures | WS1 | 0.5 d | 6 to 6.5 |
+| 4 | WS3 X4/X5/X6 | WS1 | 1 d | 6.5 to 7 |
+| 5 | WS4 E6 + X1 | WS0 (runlog), pilot | 1-2 wk elapsed | 7.5 to 8 |
+| 6 | WS5 dashboard + deploy | WS3 result decides emphasis | 3-5 d | +0.5 |
+| 7 | WS6 E1 | none | 1 d | +0.25 |
+| 8 | WS7 write-up | all | 1 d | +0.25 |
+
+Rules while executing: no UI on unverified scores (G2, G3 first); no number in a document without a result file; if a result contradicts the paper, re-verify parameter counts and configs, then publish it; cut steps or data before cutting seeds; log every deviation in Section 8.
