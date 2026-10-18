@@ -9,14 +9,14 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 
 ---
 
-## 0. Status (updated 2026-09-29)
+## 0. Status (updated 2026-10-18)
 
 ### Gates
 
 | Gate | Status | Evidence |
 |---|---|---|
 | G1 parameter counter | **Passed** | `plop_explorer/lora_params.py`; `tests/test_lora_params.py` reproduces all 16 #Params values; architecture sizes checked against each model's real `config.json` |
-| G2 scoring matches the authors | **Passed with a documented gap** | Recipe read from the authors' code (Section 3.2); Llama-1B math ranking and top-3 match; mean error 2.5% (Section 3.3 A) |
+| G2 scoring matches the authors | **Passed with a documented gap** | Recipe read from the authors' code (Section 3.2); Llama-1B math ranking and top-3 match; mean error 2.5% per type, 3.1% per layer vs Fig 4; precision ruled out as the cause (Section 3.3 A) |
 | G3 selection sets | **Passed: 5 of 5 models** on math (Gemma = `-it`) | `scripts/check_selection.py` (Section 3.3 B); asserted by `tests/test_verified.py` against `reference/ours/` |
 | G4 E1 linear network | Not started | |
 | G5 dashboard | Not started; unblocked by G2 and G3 | |
@@ -30,8 +30,11 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 | `plop_explorer/data.py` | Seeded prompt sets for math, code, history and logic, matching the authors' sources and formatting. |
 | `plop_explorer/lora_params.py` | Parameter counts per placement, `match_rank` for equal budgets, `PLACEMENTS` (Attn = Q, K, V). |
 | `scripts/check_reference.py` | Llama-1B math against the paper's 7-number table, in the reference setup and in our masked setup. |
-| `scripts/check_selection.py` | PLoP and PLoP^-1 picks for 5 models x 4 tasks against the paper's sets; retries in fp32 when fp16 overflows. |
-| `tests/` | 24 tests: module naming, random inputs score about 1, aligned inputs score above 1, padding mask, heatmap grid, exact vs sampled baseline, 16 paper parameter counts, ANLI ranks. |
+| `scripts/check_selection.py` | PLoP and PLoP^-1 picks for 5 models x 4 tasks against the paper's sets; retries in fp32 when fp16 overflows. Both check scripts write stamped summaries to `reference/ours/`. |
+| `plop_explorer/runlog.py` | `save_result`: result JSON stamped with git hash, library versions, seed, dtype, device. |
+| `reference/ours/` | Committed summaries: 24 model x task selections, per-layer Fig 4 check. |
+| `tests/` | 42 tests: module naming, random inputs score about 1, aligned inputs score above 1, padding mask, heatmap grid, exact vs sampled baseline, 16 paper parameter counts, ANLI ranks, runlog, and the paper's selection sets and per-layer error asserted against `reference/ours/`. |
+| CI, license | `.github/workflows/ci.yml` runs `pytest` on every push (green); MIT `LICENSE`. |
 
 ### Current assessment
 
@@ -39,15 +42,15 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 |---|---|---|
 | Correctness and rigor | 8/10 | Matches the authors' code and the paper's picks; tests; gaps documented |
 | What a visitor can see | 1/10 | No README, charts or demo link yet |
-| Repo hygiene | 3/10 | Tests and clean commits; no README, license, topics or CI |
+| Repo hygiene | 6/10 | Tests, CI, license, clean commits; no README or topics yet |
 | Originality | 3/10 | Careful reproduction so far; X1 and X4 are where it becomes ours |
-| Overall as a portfolio piece | 4/10 | Strong foundation, nothing visible yet |
+| Overall as a portfolio piece | 5/10 | Strong, tested foundation; nothing visible yet |
 
 ### Next steps, in order
 The full execution plan, with deliverables and acceptance checks per workstream, is Section 14. Summary:
-1. WS0: commit, license, CI, `.gitignore` the PDF (Section 14.1).
-2. WS1: finish Gemma and the per-layer check, commit small verified results (Section 14.2).
-3. WS2: README v0 with figures (Section 14.3).
+1. ~~WS0: commit, license, CI, `.gitignore` the PDF (Section 14.1).~~ **Done 2026-10-16**, except GitHub description and topics (need `gh` auth, or set on the repo page).
+2. ~~WS1: finish Gemma and the per-layer check, commit small verified results (Section 14.2).~~ **Done 2026-10-16.**
+3. **Next:** WS2: README v0 with figures (Section 14.3).
 4. WS3: X4, X5, X6 on CPU (Section 14.4). X4 runs before the dashboard because it may change what Page 1 emphasizes.
 5. WS4: E6 pilot, E6, X1 on Kaggle (Section 14.5).
 6. WS5: dashboard and deploy (Section 14.6), WS6: E1 notebook (Section 14.7), WS7: write-up and interview prep (Section 14.8).
