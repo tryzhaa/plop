@@ -41,7 +41,7 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 | Area | Score | Why |
 |---|---|---|
 | Correctness and rigor | 8/10 | Matches the authors' code and the paper's picks; tests; gaps documented |
-| What a visitor can see | 1/10 | No README, charts or demo link yet |
+| What a visitor can see | 5/10 | README with heatmap, bar chart and verified tables; no demo or training result yet |
 | Repo hygiene | 6/10 | Tests, CI, license, clean commits; no README or topics yet |
 | Originality | 3/10 | Careful reproduction so far; X1 and X4 are where it becomes ours |
 | Overall as a portfolio piece | 5/10 | Strong, tested foundation; nothing visible yet |
@@ -50,8 +50,8 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 The full execution plan, with deliverables and acceptance checks per workstream, is Section 14. Summary:
 1. ~~WS0: commit, license, CI, `.gitignore` the PDF (Section 14.1).~~ **Done 2026-10-16**, except GitHub description and topics (need `gh` auth, or set on the repo page).
 2. ~~WS1: finish Gemma and the per-layer check, commit small verified results (Section 14.2).~~ **Done 2026-10-16.**
-3. **Next:** WS2: README v0 with figures (Section 14.3).
-4. WS3: X4, X5, X6 on CPU (Section 14.4). X4 runs before the dashboard because it may change what Page 1 emphasizes.
+3. ~~WS2: README v0 with figures (Section 14.3).~~ **Done 2026-10-18:** `README.md`, `scripts/make_figures.py`, `docs/img/`. The per-type mean error from the committed CPU fp32 file is 2.6% (2.5% was the earlier MPS fp16 run).
+4. **Next:** WS3: X4, X5, X6 on CPU (Section 14.4). X4 runs before the dashboard because it may change what Page 1 emphasizes.
 5. WS4: E6 pilot, E6, X1 on Kaggle (Section 14.5).
 6. WS5: dashboard and deploy (Section 14.6), WS6: E1 notebook (Section 14.7), WS7: write-up and interview prep (Section 14.8).
 
