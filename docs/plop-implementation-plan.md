@@ -52,7 +52,7 @@ The full execution plan, with deliverables and acceptance checks per workstream,
 2. ~~WS1: finish Gemma and the per-layer check, commit small verified results (Section 14.2).~~ **Done 2026-10-16.**
 3. ~~WS2: README v0 with figures (Section 14.3).~~ **Done 2026-10-18:** `README.md`, `scripts/make_figures.py`, `docs/img/`. The per-type mean error from the committed CPU fp32 file is 2.6% (2.5% was the earlier MPS fp16 run).
 4. ~~WS3: X4, X5, X6 on CPU (Section 14.4).~~ **Done 2026-10-24** (results in Sections 6.2-6.4; X4 finding: the pick is mostly a property of the model).
-5. **Next:** WS4: E6 pilot, E6, X1 on Kaggle (Section 14.5).
+5. **In progress:** WS4: script and tests done; waiting on the Kaggle pilot run (Section 14.5, `experiments/README.md`). Then E6, then X1.
 6. WS5: dashboard and deploy (Section 14.6), WS6: E1 notebook (Section 14.7), WS7: write-up and interview prep (Section 14.8).
 
 ---
@@ -567,6 +567,8 @@ Details in Sections 6.2-6.4 and spec Steps 3-4. Implementation additions:
 4. `plop_explorer/stats.py`: `mean_se`, `paired_diff(a, b)` with a bootstrap 95% interval over seeds, `binomial_se(p, n)`.
 5. **X1 (the original contribution)**: all 35 three-type combinations on Qwen2.5-0.5B ANLI, 1 seed, reduced steps (set from the pilot), rank via `match_rank`; then the 3 most interesting (PLoP, best, worst) re-run with 3 seeds. Figure: scatter of dev accuracy vs mean NFN of the three types, Spearman rho with a permutation p-value, PLoP/MLP/Attn highlighted. If the pilot says 35 is too slow, run a fixed random 12 and say so.
 6. Page 3 and README use only committed numbers.
+- **Status (2026-10-24):** `experiments/e6_anli_train.py`, `plop_explorer/placement.py` (placement names to module types, LoRA wrapper that asserts the adapter count equals `lora_params.count`), `experiments/run_e6_grid.sh` and `experiments/README.md` (Kaggle steps) are written; 7 offline tests cover the placement logic on a tiny Qwen2 config. A 4-step CPU smoke test ran end to end (PLoP on Qwen2.5-0.5B: types Out, Up, Value; rank 16; 3,293,184 adapter parameters vs the MLP r=8 budget of 3,317,760; the paper used rank 17). ANLI sizes verified: train 162,865 (r1 16,946 / r2 45,460 / r3 100,459), dev 3,200, test 3,200.
+- **Provisional choices, to settle with the pilot:** batch 16, learning rate 2e-4, weight decay 0, eval every 250 steps on a fixed 1,000-example dev subset, final accuracy on the full test set; base weights fp32 with fp16 autocast. None is given in the paper. If the pilot is slow, cut steps before seeds.
 - Accept: results table with mean ± SE and paired differences; directional criteria from Section 5.1 reported as met or not met; X1 scatter with rho. A null or negative result is acceptable and published with the config.
 
 ### 14.6 WS5: dashboard and deploy (about 3-5 days)

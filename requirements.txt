@@ -4,3 +4,5 @@ datasets
 pytest
 matplotlib
 scipy
+peft
+accelerate
