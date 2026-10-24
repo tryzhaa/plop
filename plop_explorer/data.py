@@ -24,10 +24,11 @@ def _mmlu(subject):
     ]
 
 
-def load_prompts(task, n=100, seed=0):
+def load_prompts(task, n=100, seed=0, pool_size=None):
+    """`pool_size` overrides the math pool (the reference uses the first 2n questions, so it grows with n)."""
     if task == "math":
         # The reference samples from the first 2n training questions.
-        pool = load_dataset("openai/gsm8k", "main", split="train")["question"][: 2 * n]
+        pool = load_dataset("openai/gsm8k", "main", split="train")["question"][: pool_size or 2 * n]
     elif task == "code":
         pool = [f"# Write a Python function\n{p}" for p in load_dataset("openai/openai_humaneval", split="test")["prompt"]]
     elif task == "history":
@@ -37,6 +38,38 @@ def load_prompts(task, n=100, seed=0):
     else:
         raise ValueError(f"Unknown task {task!r}; expected one of {sorted(TASKS)}")
     return random.Random(seed).sample(pool, min(n, len(pool)))
+
+
+CONTROLS = {
+    "random_tokens": "Uniformly random vocabulary tokens, same lengths as the math prompts",
+    "shuffled_words": "The math prompts' words in random order (same words, no meaning)",
+    "prose": "Plain English sentences unrelated to any task (WikiText-2)",
+}
+
+
+def load_control(kind, n=100, seed=0, tokenizer=None):
+    """Control prompt sets for X4. `random_tokens` needs the tokenizer (vocabulary and lengths)."""
+    rng = random.Random(seed)
+    if kind == "shuffled_words":
+        out = []
+        for prompt in load_prompts("math", n, seed):
+            words = prompt.split()
+            rng.shuffle(words)
+            out.append(" ".join(words))
+        return out
+    if kind == "random_tokens":
+        special = set(tokenizer.all_special_ids)
+        ids = [i for i in range(len(tokenizer)) if i not in special]
+        # Decoding and re-tokenizing changes some tokens, but the text stays noise.
+        return [
+            tokenizer.decode([rng.choice(ids) for _ in range(len(tokenizer(p)["input_ids"]))])
+            for p in load_prompts("math", n, seed)
+        ]
+    if kind == "prose":
+        lines = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")["text"]
+        pool = [t.strip() for t in lines if not t.lstrip().startswith("=") and 20 <= len(t.split()) <= 80]
+        return rng.sample(pool, min(n, len(pool)))
+    raise ValueError(f"Unknown control {kind!r}; expected one of {sorted(CONTROLS)}")
 
 
 def make_batches(prompts, tokenizer, batch_size=8, seq_len=256, padding_side=None):

@@ -1,0 +1,23 @@
+{
+ "meta": {
+  "git_hash": "ee68638ff05fa87787c8ec5e89dfb23fccf88e7a",
+  "torch": "2.14.1",
+  "transformers": "5.20.1",
+  "timestamp": "2026-10-24T17:15:31+00:00",
+  "model": "unsloth/Llama-3.2-1B",
+  "task": "math",
+  "nbsamples": 100,
+  "seed": 0,
+  "device": "cpu",
+  "dtype": "float32"
+ },
+ "result": {
+  "Query": 2.8696540527573453,
+  "Key": 3.1075208333595743,
+  "Value": 0.9534805725146764,
+  "OutProj": 0.9131174056361132,
+  "GateProj": 1.7399533122896873,
+  "UpProj": 1.1601760136016297,
+  "DownProj": 1.0296989450316578
+ }
+}

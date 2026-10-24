@@ -1,0 +1,337 @@
+{
+ "meta": {
+  "git_hash": "ee68638ff05fa87787c8ec5e89dfb23fccf88e7a",
+  "torch": "2.14.1",
+  "transformers": "5.20.1",
+  "timestamp": "2026-10-24T17:16:06+00:00",
+  "models": [
+   "Llama-3.2-1B-Instruct",
+   "Qwen2.5-0.5B",
+   "Qwen3-0.6B",
+   "Qwen3-1.7B",
+   "gemma-3-1b-it"
+  ]
+ },
+ "result": {
+  "mean_rho": {
+   "math": [
+    1.0,
+    0.9714285714285715,
+    0.9428571428571428,
+    0.9571428571428573,
+    0.9571428571428573,
+    0.9500000000000002,
+    0.9642857142857144
+   ],
+   "code": [
+    0.9714285714285715,
+    1.0,
+    0.95,
+    0.9428571428571428,
+    0.9428571428571431,
+    0.9357142857142857,
+    0.95
+   ],
+   "history": [
+    0.9428571428571428,
+    0.95,
+    1.0,
+    0.9928571428571429,
+    0.9571428571428573,
+    0.9714285714285715,
+    0.9642857142857144
+   ],
+   "logic": [
+    0.9571428571428573,
+    0.9428571428571428,
+    0.9928571428571429,
+    1.0,
+    0.9714285714285715,
+    0.9785714285714286,
+    0.9785714285714286
+   ],
+   "random_tokens": [
+    0.9571428571428573,
+    0.9428571428571431,
+    0.9571428571428573,
+    0.9714285714285715,
+    1.0,
+    0.9928571428571429,
+    0.9571428571428573
+   ],
+   "shuffled_words": [
+    0.9500000000000002,
+    0.9357142857142857,
+    0.9714285714285715,
+    0.9785714285714286,
+    0.9928571428571429,
+    1.0,
+    0.9500000000000002
+   ],
+   "prose": [
+    0.9642857142857144,
+    0.95,
+    0.9642857142857144,
+    0.9785714285714286,
+    0.9571428571428573,
+    0.9500000000000002,
+    1.0
+   ]
+  },
+  "rho_between_models": {
+   "math": 0.4857142857142859,
+   "code": 0.5321428571428573,
+   "history": 0.5571428571428572,
+   "logic": 0.517857142857143,
+   "random_tokens": 0.4642857142857144,
+   "shuffled_words": 0.4821428571428572,
+   "prose": 0.517857142857143
+  },
+  "pick_change_across_tasks": {
+   "Llama-3.2-1B-Instruct": 0.0,
+   "Qwen2.5-0.5B": 0.0,
+   "Qwen3-0.6B": 0.0,
+   "Qwen3-1.7B": 0.6666666666666666,
+   "gemma-3-1b-it": 0.0
+  },
+  "pick_change_across_models": {
+   "math": 0.9,
+   "code": 0.9,
+   "history": 0.9,
+   "logic": 0.9
+  },
+  "control_distance": {
+   "Llama-3.2-1B-Instruct": {
+    "random_tokens": 0.0686254233430262,
+    "shuffled_words": 0.025817876490473162,
+    "prose": 0.02082294347559821
+   },
+   "Qwen2.5-0.5B": {
+    "random_tokens": 0.040979211154380954,
+    "shuffled_words": 0.02126968552072119,
+    "prose": 0.024259067987708032
+   },
+   "Qwen3-0.6B": {
+    "random_tokens": 0.038248874070827985,
+    "shuffled_words": 0.020470979277828562,
+    "prose": 0.004005372067994657
+   },
+   "Qwen3-1.7B": {
+    "random_tokens": 0.046291917614458354,
+    "shuffled_words": 0.02517771682723705,
+    "prose": 0.009265604643091832
+   },
+   "gemma-3-1b-it": {
+    "random_tokens": 0.060115953756607735,
+    "shuffled_words": 0.05674821428922542,
+    "prose": 0.02527182215426671
+   }
+  },
+  "task_spread": {
+   "Llama-3.2-1B-Instruct": 0.03949152586347359,
+   "Qwen2.5-0.5B": 0.032990079945862505,
+   "Qwen3-0.6B": 0.023941541797328863,
+   "Qwen3-1.7B": 0.01799266017505319,
+   "gemma-3-1b-it": 0.03014144999994345
+  },
+  "control_picks": {
+   "Llama-3.2-1B-Instruct": {
+    "random_tokens": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ],
+    "shuffled_words": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ],
+    "prose": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ]
+   },
+   "Qwen2.5-0.5B": {
+    "random_tokens": [
+     "OutProj",
+     "UpProj",
+     "Value"
+    ],
+    "shuffled_words": [
+     "OutProj",
+     "UpProj",
+     "Value"
+    ],
+    "prose": [
+     "OutProj",
+     "UpProj",
+     "Value"
+    ]
+   },
+   "Qwen3-0.6B": {
+    "random_tokens": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ],
+    "shuffled_words": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ],
+    "prose": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ]
+   },
+   "Qwen3-1.7B": {
+    "random_tokens": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ],
+    "shuffled_words": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ],
+    "prose": [
+     "OutProj",
+     "UpProj",
+     "Value"
+    ]
+   },
+   "gemma-3-1b-it": {
+    "random_tokens": [
+     "Key",
+     "UpProj",
+     "Value"
+    ],
+    "shuffled_words": [
+     "Key",
+     "UpProj",
+     "Value"
+    ],
+    "prose": [
+     "Key",
+     "UpProj",
+     "Value"
+    ]
+   }
+  },
+  "task_picks": {
+   "Llama-3.2-1B-Instruct": {
+    "math": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ],
+    "code": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ],
+    "history": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ],
+    "logic": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ]
+   },
+   "Qwen2.5-0.5B": {
+    "math": [
+     "OutProj",
+     "UpProj",
+     "Value"
+    ],
+    "code": [
+     "OutProj",
+     "UpProj",
+     "Value"
+    ],
+    "history": [
+     "OutProj",
+     "UpProj",
+     "Value"
+    ],
+    "logic": [
+     "OutProj",
+     "UpProj",
+     "Value"
+    ]
+   },
+   "Qwen3-0.6B": {
+    "math": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ],
+    "code": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ],
+    "history": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ],
+    "logic": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ]
+   },
+   "Qwen3-1.7B": {
+    "math": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ],
+    "code": [
+     "DownProj",
+     "OutProj",
+     "Value"
+    ],
+    "history": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ],
+    "logic": [
+     "DownProj",
+     "UpProj",
+     "Value"
+    ]
+   },
+   "gemma-3-1b-it": {
+    "math": [
+     "Key",
+     "UpProj",
+     "Value"
+    ],
+    "code": [
+     "Key",
+     "UpProj",
+     "Value"
+    ],
+    "history": [
+     "Key",
+     "UpProj",
+     "Value"
+    ],
+    "logic": [
+     "Key",
+     "UpProj",
+     "Value"
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "meta": {
+  "git_hash": "ee68638ff05fa87787c8ec5e89dfb23fccf88e7a",
+  "torch": "2.14.1",
+  "transformers": "5.20.1",
+  "timestamp": "2026-10-24T16:40:32+00:00",
+  "model": "unsloth/gemma-3-1b-pt",
+  "task": "math",
+  "nbsamples": 100,
+  "seed": 0,
+  "device": "cpu",
+  "dtype": "float32"
+ },
+ "result": {
+  "Query": 1.4773490414400983,
+  "Key": 1.339796165850964,
+  "Value": 0.7123137993927972,
+  "OutProj": 1.7699990264440666,
+  "GateProj": 1.4594949726190458,
+  "UpProj": 0.9266229076728705,
+  "DownProj": 1.4212670711252378
+ }
+}
