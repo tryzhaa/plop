@@ -63,13 +63,24 @@ From the full [discrepancy log](docs/plop-implementation-plan.md#8-paper-discrep
 4. **Batch settings conflict.** The text says batch 200; the command says batch 8 with 100 samples. They give the same result.
 5. **Learning rates were tuned on the test set** in the SFT tables. Most PLoP vs MLP gaps there are within the ~1.3-point binomial error of GSM8K's 1,319 test problems.
 
+## A finding of my own: the pick is mostly a property of the model
+
+Is PLoP's choice task-aware? I scored 5 models on the four task prompt sets plus three controls: random tokens, the math prompts' words shuffled, and unrelated prose ([`scripts/x4_task_vs_model.py`](scripts/x4_task_vs_model.py), 100 prompts, padding masked).
+
+![Rank agreement between prompt sets](docs/img/x4_rho.png)
+
+- Within a model, every prompt set ranks the 7 module types almost the same way (Spearman ρ 0.94-0.99), **even random tokens vs math (0.96)**. Between models ρ is about 0.5.
+- The top-3 pick is identical on all 4 tasks for 4 of 5 models, and the three controls give the same pick as the tasks for the same 4 (Qwen3-1.7B differs where Out and Up are a near-tie).
+- Scores do shift with the input (random tokens sit 0.04-0.07 from the task average, against 0.02-0.04 between tasks), so the signal is not zero, but it is small next to the differences between models.
+- About 25 prompts were enough for a stable pick on all 3 models I tested; 5-10 on two of them ([X5](docs/img/x5_stability.png)). Base and instruct versions of a model pick the same types in 2 of 3 pairs (X6; Qwen3-0.6B swaps a near-tie).
+
+Limits: one seed, 100 prompts, 7 types, and this does not test whether a task-matched placement trains better. Details in [plan Sections 6.2-6.4](docs/plop-implementation-plan.md).
+
 ## What this does not show (yet)
 
 - **No training results.** I have reproduced the scoring and the picks, not the paper's claim that PLoP placements train better. ANLI LoRA runs at matched parameter counts with 3 seeds are next ([plan, Section 14.5](docs/plop-implementation-plan.md)).
 - **CPU and Apple GPU only.** The authors used CUDA fp16, and training needs a GPU (Kaggle T4/P100, fp16 instead of the paper's bf16).
-- **Planned extensions, not done:**
-  - **X4:** does NFN depend on the task, or mostly on the model? Picks barely change across tasks above.
-  - **X1:** does the score predict benefit across all 35 three-type placements?
+- **Planned, not done:** X1, which tests whether the score predicts benefit across all 35 three-type placements. It matters more now, since the pick barely depends on the task.
 
 ## Run it
 
@@ -77,10 +88,11 @@ Requires Python 3.10+ (for `transformers>=5`).
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m pytest -q                                  # 42 tests, CPU, seconds
+.venv/bin/python -m pytest -q                                  # 47 tests, CPU, seconds
 .venv/bin/python scripts/check_reference.py --task math         # Llama-1B vs the paper, per type and per layer
 .venv/bin/python scripts/check_selection.py --device cpu        # 6 models x 4 tasks vs the paper's sets
 .venv/bin/python scripts/make_figures.py                        # redraws docs/img from reference/ours
+.venv/bin/python scripts/x4_task_vs_model.py && .venv/bin/python scripts/x4_analyze.py   # the controls experiment
 ```
 
 Models download from Hugging Face. Llama uses the ungated `unsloth` mirror (same weights).

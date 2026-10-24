@@ -9,7 +9,7 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 
 ---
 
-## 0. Status (updated 2026-10-18)
+## 0. Status (updated 2026-10-24)
 
 ### Gates
 
@@ -43,7 +43,7 @@ Conventions: "Target" means a number or set the paper publishes that our code mu
 | Correctness and rigor | 8/10 | Matches the authors' code and the paper's picks; tests; gaps documented |
 | What a visitor can see | 5/10 | README with heatmap, bar chart and verified tables; no demo or training result yet |
 | Repo hygiene | 6/10 | Tests, CI, license, clean commits; no README or topics yet |
-| Originality | 3/10 | Careful reproduction so far; X1 and X4 are where it becomes ours |
+| Originality | 5/10 | X4 (controls), X5, X6 are ours; X1 and the training runs are still to do |
 | Overall as a portfolio piece | 5/10 | Strong, tested foundation; nothing visible yet |
 
 ### Next steps, in order
@@ -51,8 +51,8 @@ The full execution plan, with deliverables and acceptance checks per workstream,
 1. ~~WS0: commit, license, CI, `.gitignore` the PDF (Section 14.1).~~ **Done 2026-10-16**, except GitHub description and topics (need `gh` auth, or set on the repo page).
 2. ~~WS1: finish Gemma and the per-layer check, commit small verified results (Section 14.2).~~ **Done 2026-10-16.**
 3. ~~WS2: README v0 with figures (Section 14.3).~~ **Done 2026-10-18:** `README.md`, `scripts/make_figures.py`, `docs/img/`. The per-type mean error from the committed CPU fp32 file is 2.6% (2.5% was the earlier MPS fp16 run).
-4. **Next:** WS3: X4, X5, X6 on CPU (Section 14.4). X4 runs before the dashboard because it may change what Page 1 emphasizes.
-5. WS4: E6 pilot, E6, X1 on Kaggle (Section 14.5).
+4. ~~WS3: X4, X5, X6 on CPU (Section 14.4).~~ **Done 2026-10-24** (results in Sections 6.2-6.4; X4 finding: the pick is mostly a property of the model).
+5. **Next:** WS4: E6 pilot, E6, X1 on Kaggle (Section 14.5).
 6. WS5: dashboard and deploy (Section 14.6), WS6: E1 notebook (Section 14.7), WS7: write-up and interview prep (Section 14.8).
 
 ---
@@ -343,11 +343,36 @@ Optional, lower priority: repeat the paper's unsuccessful layer-level selection 
 
 Report whichever it is. **Effect on the product:** Page 1 should show how stable the pick is across tasks (for example, "this model's pick is the same on 4 of 4 tasks").
 
+**Result (2026-10-24, `scripts/x4_task_vs_model.py` and `x4_analyze.py`; 5 instruct/post-trained models x 4 tasks + 3 controls, 100 prompts, seed 0, padding masked, CPU fp32):**
+- Within a model the seven prompt sets rank the module types almost identically: mean Spearman rho 0.94-0.99 over all pairs, including random tokens vs math (0.96). Between models on the same set rho is only about 0.5, and the top-3 pick differs for 90% of model pairs.
+- The top-3 pick is the same on all four tasks for 4 of 5 models. Qwen3-1.7B differs (Out vs Up), a near-tie. The three controls give the same pick as the tasks in 4 of 5 models; Qwen3-1.7B's prose control picks Out/Up/Value.
+- Scores do move with the input: random tokens sit 0.04-0.07 (mean |NFN difference| over the 7 types) from the task average, against 0.02-0.04 between tasks. Shuffled words and prose sit within or near the task spread (Gemma shuffled words 0.057 vs 0.030 is the exception).
+- Reading, by the table above: controls give the same pick as the tasks, so **in this setup NFN's pick is mostly a property of the model, not of the task.**
+- Limits: one seed and 100 prompts per set; ranks over only 7 types; this does not test whether a task-matched placement trains better, and the paper's Fig 6 (specialized models score higher) compares models, so it is not contradicted. Figures: `docs/img/x4_rho.png`, `docs/img/x4_controls.png`; numbers in `reference/ours/x4/`.
+- Product effect: Page 1 shows "this model's pick is the same on k of 4 tasks and on all 3 controls", and the explainer does not claim the score is task-specific.
+
 ### 6.3 X5: how many prompts are enough? (new, CPU)
 Scores moved about 0.01 across 5 seeds at 100 prompts. Score with 5, 10, 25, 50 and 100 prompts over 5 seeds each, and plot the spread and how often the pick changes. If about 10 prompts is stable, the "paste your own prompts" feature can be fast and credible, and the tool can say how many prompts it needs.
 
+**Result (2026-10-24, `scripts/x5_x6.py x5`; math, fixed pool of the first 1,000 GSM8K questions, 5 seeds, padding masked, CPU fp32):**
+- Mean per-type std across seeds falls from 0.004-0.008 at 5 prompts to 0.001-0.004 at 100.
+- The PLoP pick matched the n=100, seed-0 pick in every seed at every n for Llama-3.2-1B and Qwen2.5-0.5B. Qwen3-0.6B matched in 4 of 5 seeds at n=5 and n=10 and in all seeds from n=25 (its Down/Out scores are a near-tie).
+- So about 25 prompts gave a stable pick for all three models here, and 5-10 for two of them. This supports a fast "paste your own prompts" feature, with a recommendation of at least 25 prompts.
+- Limits: three models, math only, 5 seeds, agreement measured against one reference pick. An earlier run used a pool of 2n questions, which made small-n subsets overlap and hid the spread; it was discarded. The reference code's 2n pool has the same property.
+- Figure `docs/img/x5_stability.png` (Llama's line is hidden behind Qwen2.5's at 100% on the right panel); numbers in `reference/ours/x5/`.
+
 ### 6.4 X6: base vs instruction-tuned (new, CPU)
 Compare pairs: Gemma3-1B `-pt` vs `-it`, Qwen3-0.6B-Base vs Qwen3-0.6B, Llama-3.2-1B vs Llama-3.2-1B-Instruct. Does post-training change the NFN map, and does it change the pick? This fits naturally on Page 2 (Compare). The paper labels its NFN models Instruct (Gemma3-1B-Instruct, Qwen3-1.7B-Instruct), so the "base or instruct" unknown applies only to the SFT training runs; X6 can still show whether the pick would differ.
+
+**Result (2026-10-24, `scripts/x5_x6.py x6`; math, 100 prompts, seed 0, padding masked, CPU fp32):**
+
+| Pair (base / instruct) | Spearman rho of the 7 scores | Largest score change | Pick, base | Pick, instruct |
+|---|---|---|---|---|
+| Gemma3-1B pt / it | 0.86 | 0.11 | Key, Up, Value | Key, Up, Value |
+| Qwen3-0.6B Base / Qwen3-0.6B | 0.96 | 0.05 | Out, Up, Value | Down, Up, Value |
+| Llama-3.2-1B / Instruct | 1.00 | 0.17 | Down, Out, Value | Down, Out, Value |
+
+Post-training barely changes the ranking, and the pick is the same in 2 of 3 pairs; Qwen3-0.6B swaps Out for Down, which score within 0.01 of each other (base 0.928 vs 0.936, instruct 0.948 vs 0.944). Consistent with X4: the pick follows the model family more than its fine-tuning. Limits: three pairs, one task and seed. Numbers in `reference/ours/x6/`.
 
 ---
 
